@@ -1,15 +1,32 @@
 package com.ecommercebackend.ecommercebackend.controller;
 
+<<<<<<< HEAD
 import com.ecommercebackend.ecommercebackend.entities.*;
 import org.springframework.web.bind.annotation.*;
 
+=======
+import com.ecommercebackend.ecommercebackend.db.entity.File;
+import com.ecommercebackend.ecommercebackend.db.repo.FileRepository;
+import com.ecommercebackend.ecommercebackend.entities.BuyerRegDetails;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+>>>>>>> ba67a2f2751111ffbb6657501814a2e6ec8dbaf1
 import java.util.*;
 
 @RestController
 public class HomeController {
+<<<<<<< HEAD
     private List<BuyerRegDetails> buyerList = new ArrayList<>() ;
     private List<SellerRegDetails> sellerList = new ArrayList<>() ;
 
+=======
+    private List<BuyerRegDetails> buyers = new ArrayList<>() ;
+    @Autowired
+    FileRepository fileRepository;
+>>>>>>> ba67a2f2751111ffbb6657501814a2e6ec8dbaf1
 
     // welcome page
     @GetMapping("/")
@@ -58,5 +75,14 @@ public class HomeController {
         return sellerList ;
     }
 
+<<<<<<< HEAD
 
 }
+=======
+    @GetMapping("/db")
+    public List<File> getResult(){
+        List<File> files = (List<File>) fileRepository.findAll();
+        return files;
+    }
+}
+>>>>>>> ba67a2f2751111ffbb6657501814a2e6ec8dbaf1
