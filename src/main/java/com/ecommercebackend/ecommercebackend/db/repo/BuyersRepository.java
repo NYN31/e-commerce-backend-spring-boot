@@ -6,6 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 
 
 public interface BuyersRepository extends CrudRepository<Buyers, Integer> {
-
+    Buyers findByEmail(String email);
 }
 

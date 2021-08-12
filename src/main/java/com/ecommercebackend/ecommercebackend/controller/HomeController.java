@@ -3,7 +3,11 @@ package com.ecommercebackend.ecommercebackend.controller;
 
 import com.ecommercebackend.ecommercebackend.db.entity.*;
 import com.ecommercebackend.ecommercebackend.db.repo.*;
+import com.ecommercebackend.ecommercebackend.pojo.request.BuyerSignupRequest;
+import com.ecommercebackend.ecommercebackend.pojo.response.SignupResponse;
+import com.ecommercebackend.ecommercebackend.service.impl.BuyerSignupService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -11,7 +15,11 @@ import java.util.*;
 @RestController
 public class HomeController {
     @Autowired
-    BuyersRepository buyersRepository ;
+    BuyerSignupService buyerSignupService;
+
+    @Autowired
+    BuyersRepository buyersRepository;
+
     @Autowired
     SellersRepository sellersRepository ;
     @Autowired
@@ -37,17 +45,20 @@ public class HomeController {
     // welcome page
     @GetMapping("/")
     public String index() {
-        return "Welcome to my page"  ;
+        return "Welcome to my page";
     }
 
 
     /**** BUYERS & SELLER PARTS ***/
 
     // adding buyers
-    @PostMapping("/buyer/register")
-    public Buyers addBuyer(@RequestBody Buyers buyer) {
-        buyersRepository.save(buyer) ;
-        return buyer ;
+    @PostMapping(
+            value = "/buyer/register",
+            consumes= MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public SignupResponse addBuyer(@RequestBody BuyerSignupRequest request) {
+        return buyerSignupService.signup(request);
     }
     // getting all buyers
     @GetMapping("/buyers")
