@@ -1,12 +1,12 @@
 package com.ecommercebackend.ecommercebackend.db.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
+@Table(name = "product_purchases")
 public class ProductPurchase {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     public Integer id ;
     @Column(name = "product_name")

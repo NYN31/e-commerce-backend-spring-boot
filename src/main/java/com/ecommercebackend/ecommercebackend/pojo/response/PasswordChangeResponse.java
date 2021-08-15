@@ -1,5 +1,5 @@
 package com.ecommercebackend.ecommercebackend.pojo.response;
 
-public class SignupResponse extends CommonResponse {
+public class PasswordChangeResponse extends CommonResponse {
     public Integer dbId;
 }

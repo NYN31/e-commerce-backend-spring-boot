@@ -3,7 +3,8 @@ package com.ecommercebackend.ecommercebackend.db.entity;
 import javax.persistence.*;
 
 @Entity
-public class Buyers {
+@Table(name = "users")
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -14,14 +15,14 @@ public class Buyers {
     public String email ;
     @Column(name = "password")
     public String password ;
+    @Column(name = "type")
+    public String type ;
+    @Column(name = "company")
+    public String company ;
     @Column(name = "address")
     public String address ;
-    @Column(name = "pic_path")
-    public String picPath ;
-    @Column(name = "money")
-    public Double money ;
-    @Column(name = "bank_name")
-    public String bankName ;
-    @Column(name = "acc_num")
-    public String accountNumber ;
+    @Column(name = "imageUrl")
+    public String imageUrl ;
+    @Column(name = "balance")
+    public Double balance ;
 }
