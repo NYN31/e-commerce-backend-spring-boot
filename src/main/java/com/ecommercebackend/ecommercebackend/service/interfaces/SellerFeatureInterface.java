@@ -1,20 +1,19 @@
 package com.ecommercebackend.ecommercebackend.service.interfaces;
 
 import com.ecommercebackend.ecommercebackend.db.entity.BankAccount;
+import com.ecommercebackend.ecommercebackend.db.entity.Product;
 import com.ecommercebackend.ecommercebackend.db.entity.ProductPurchase;
 import com.ecommercebackend.ecommercebackend.pojo.request.*;
 import com.ecommercebackend.ecommercebackend.pojo.response.*;
 
-import java.util.*;
+import java.util.List;
 
-public interface BuyerFeatureInterface {
-    BuyerFeatureResponse editProfile(BuyerFeatureRequest request);
+public interface SellerFeatureInterface {
+    SellerFeatureResponse editProfile(SellerFeatureRequest request);
     PasswordChangeResponse changePassword(PasswordChangeRequest request);
-    ProductResponse ratingProduct(ProductRatingRequest request);
     BankAccountResponse addBankAccount(BankAccountRequest request);
-    List<BankAccount> findAllBankAccounts();
-    changeMoneyResponse addMoney(changeMoneyRequest request);
-    BuyProductResponse buyProduct(BuyProductRequest request);
-    List<ProductPurchase> allPurchases();
-    List<ProductPurchase> buyerPurchaseList(int id);
+//    List<BankAccount> findAllBankAccounts();
+    changeMoneyResponse withdrawMoney(changeMoneyRequest request);
+    List<ProductPurchase> allSells();
+    List<ProductPurchase> sellerSellList(int id);
 }

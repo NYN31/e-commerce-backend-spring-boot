@@ -14,21 +14,25 @@ import java.util.*;
 
 @RestController
 public class HomeController {
+    /*
+        1. Add buyers
+        2. Add sellers
+        3. Get all users
+    */
     @Autowired
     SignupService signupService;
     @Autowired
     UsersRepository usersRepository ;
-
     // welcome page
     @GetMapping("/")
     public String index() {
-        return "index";
+        return "index changed";
     }
 
 
     /**** BUYERS & SELLER PARTS ***/
 
-    // adding buyers
+    // 1. adding buyers
     @PostMapping(
             value = "/buyer/register",
             consumes= MediaType.APPLICATION_JSON_VALUE,
@@ -38,7 +42,7 @@ public class HomeController {
         return signupService.signup(request, "buyer");
     }
 
-    // adding sellers
+    // 2. adding sellers
     @PostMapping(
             value = "/seller/register",
             consumes= MediaType.APPLICATION_JSON_VALUE,
@@ -48,6 +52,7 @@ public class HomeController {
         return signupService.signup(request, "seller");
     }
 
+    // 3. get all users
     @GetMapping("/users")
     public List<User> getAllUser() {
         return (List<User>) usersRepository.findAll() ;

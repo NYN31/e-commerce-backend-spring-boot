@@ -17,11 +17,19 @@ import java.util.*;
 @RestController
 @RequestMapping("/products")
 public class ProductController {
+
+    /*
+        1. Add product
+        2. All products
+        3. Find product by id
+        4. Update product
+        5. Delete product by id
+    */
     @Autowired
     ProductService productService;
 
 
-    // adding product
+    // 1. Adding product
     @PostMapping(
             value = "",
             consumes= MediaType.APPLICATION_JSON_VALUE,
@@ -31,11 +39,13 @@ public class ProductController {
         return productService.addProduct(request);
     }
 
+    // 2. All Products
     @GetMapping("")
     public List<Product> allProducts() {
         return productService.allProducts() ;
     }
 
+    // 3. Find product by product id
     @GetMapping("/{id}")
     public Product findProductById(@PathVariable int id) throws ProductNotFoundException {
         Product product = productService.findProductById(id) ;
@@ -46,11 +56,13 @@ public class ProductController {
         }
     }
 
-
+    // 4. Update product details
     @PutMapping("")
     public ProductResponse updateProduct(@RequestBody ProductRequest request) {
         return productService.updateProduct(request);
     }
+
+    // 5. Delete product by id
     @DeleteMapping("/{id}")
     public ProductResponse deleteProduct(@PathVariable int id) {
         Product product = productService.findProductById(id);

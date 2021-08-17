@@ -1,24 +1,16 @@
 package com.ecommercebackend.ecommercebackend.service.impl;
 
-import com.ecommercebackend.ecommercebackend.db.entity.Product;
-import com.ecommercebackend.ecommercebackend.db.entity.ProductRating;
-import com.ecommercebackend.ecommercebackend.db.entity.User;
-import com.ecommercebackend.ecommercebackend.db.repo.ProductRatingsRepository;
-import com.ecommercebackend.ecommercebackend.db.repo.ProductRepository;
-import com.ecommercebackend.ecommercebackend.db.repo.UsersRepository;
-import com.ecommercebackend.ecommercebackend.pojo.request.BuyerFeatureRequest;
-import com.ecommercebackend.ecommercebackend.pojo.request.PasswordChangeRequest;
-import com.ecommercebackend.ecommercebackend.pojo.request.ProductRatingRequest;
-import com.ecommercebackend.ecommercebackend.pojo.request.ProductRequest;
-import com.ecommercebackend.ecommercebackend.pojo.response.BuyerFeatureResponse;
-import com.ecommercebackend.ecommercebackend.pojo.response.PasswordChangeResponse;
-import com.ecommercebackend.ecommercebackend.pojo.response.ProductResponse;
+import com.ecommercebackend.ecommercebackend.db.entity.*;
+import com.ecommercebackend.ecommercebackend.db.repo.*;
+import com.ecommercebackend.ecommercebackend.pojo.request.*;
+import com.ecommercebackend.ecommercebackend.pojo.response.*;
 import com.ecommercebackend.ecommercebackend.service.interfaces.BuyerFeatureInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BuyerFeatureService implements BuyerFeatureInterface {
@@ -28,13 +20,16 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
     ProductRepository productRepository;
     @Autowired
     ProductRatingsRepository productRatingsRepository;
+    @Autowired
+    BankAccountRepository bankAccountRepository;
+    @Autowired
+    ProductPurchaseRepository productPurchaseRepository;
 
     @Override
     public BuyerFeatureResponse editProfile(BuyerFeatureRequest request) {
         User user = usersRepository.findByEmail(request.email);
 
         if(user != null) {
-            user.type = request.type;
             user.imageUrl = request.imageURL;
             user.company = request.company;
             user.address = request.address;
@@ -58,16 +53,15 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
 
     @Override
     public PasswordChangeResponse changePassword(PasswordChangeRequest request) {
-        //System.out.println(request.email);
         User user = usersRepository.findByEmail(request.email);
-        //System.out.println(user.email + " " + request.email);
-        String msg = "";
+
+        String validationMessage = "";
         if(user != null) {
-            if(user != null && !user.name.equals(request.name)) { msg += "Invalid name ";}
-            if(user != null && !user.password.equals(request.currentPassword)) { msg += "invalid password.";}
-            if(msg.length() > 0) {
+            if(user != null && !user.name.equals(request.name)) { validationMessage += "Invalid name ";}
+            if(user != null && !user.password.equals(request.currentPassword)) { validationMessage += "invalid password.";}
+            if(validationMessage.length() > 0) {
                 PasswordChangeResponse response = new PasswordChangeResponse();
-                response.message = msg ;
+                response.message = validationMessage ;
                 response.statusCode = 425;
                 return response;
             }else {
@@ -119,7 +113,7 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
                 sumOfRating += productRating.rating;
             }
         }
-        System.out.println(sumOfRating + " " + totalGivenRating);
+
         Double rat = sumOfRating / totalGivenRating ;
         rat = Math.round(rat * 100.0) / 100.0 ;
         product.rating = rat;
@@ -131,5 +125,119 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
         response.message = "You are successfully rated product id - " + id;
         response.dbId = id;
         return response;
+    }
+
+    public BankAccountResponse addBankAccount(BankAccountRequest request) {
+        List<BankAccount> bankAccountList =
+                (List<BankAccount>) bankAccountRepository.findAll();
+        for(BankAccount account: bankAccountList) {
+            if(account.email.equals(request.email) && account.bankName.equals(request.bankName)
+                    && account.bankBranch.equals(request.bankBranch)) {
+                BankAccountResponse response = new BankAccountResponse();
+                response.statusCode = 425;
+                response.message = "You are already connect with this bank";
+                return response;
+            }
+        }
+        BankAccount bankAccount = new BankAccount();
+        bankAccount.email = request.email;
+        bankAccount.bankName = request.bankName;
+        bankAccount.bankBranch = request.bankBranch;
+        bankAccountRepository.save(bankAccount);
+
+        BankAccountResponse response = new BankAccountResponse();
+        response.statusCode = 425;
+        response.message = "You are now connect with this bank";
+        return response;
+    }
+    public List<BankAccount> findAllBankAccounts() {
+        return (List<BankAccount>) bankAccountRepository.findAll();
+    }
+
+    public changeMoneyResponse addMoney(changeMoneyRequest request) {
+        List<BankAccount> bankAccountList =
+                (List<BankAccount>) bankAccountRepository.findAll();
+        for(BankAccount bankAccount: bankAccountList) {
+            if(bankAccount.email.equals(request.email) && bankAccount.bankName.equals(request.bankName)
+                    && bankAccount.bankBranch.equals(request.bankBranch)) {
+                User user = usersRepository.findByEmail(bankAccount.email);
+                Double newBalance = user.balance + request.balance;
+                user.balance = newBalance;
+                usersRepository.save(user);
+
+                changeMoneyResponse response = new changeMoneyResponse();
+                response.dbId = user.id;
+                response.statusCode = 200;
+                response.message = "Added money from bank to " + user.name + "'s account";
+                return response;
+            }
+        }
+        changeMoneyResponse response = new changeMoneyResponse();
+        response.statusCode = 425;
+        response.message = "Your given information is wrong";
+        return response;
+    }
+
+    public BuyProductResponse buyProduct(BuyProductRequest request) {
+        User buyer = usersRepository.findById((int)request.buyerId);
+        User seller = usersRepository.findById((int)request.sellerId);
+        Product tempProduct = productRepository.findById((int)request.productId);
+
+        String validationMessage = "";
+        int totalPrice = (int)request.quantity * (int)tempProduct.price;
+        // if users balance is greater equal than the request quantity
+        // multiplied by requested product price
+        if(buyer.balance < totalPrice) {
+            validationMessage += "$Insufficient balance ";
+        }
+        if(tempProduct.quantity < (int)request.quantity) {
+            validationMessage += "$Insufficient quantity";
+        }
+
+        if(validationMessage.length() > 0) {
+            BuyProductResponse response = new BuyProductResponse();
+            response.dbProductId = request.productId;
+            response.dbUserId = request.buyerId;
+            response.statusCode = 425;
+            response.message = validationMessage;
+            return response;
+        }else {
+            ProductPurchase productPurchase = new ProductPurchase();
+            productPurchase.product_id = request.productId;
+            productPurchase.buyer_id = request.buyerId;
+
+            productPurchase.seller_id = request.sellerId;
+            productPurchase.quantity = request.quantity;
+            productPurchase.price = totalPrice;
+            productPurchaseRepository.save(productPurchase);
+
+            buyer.balance -= totalPrice;
+            usersRepository.save(buyer);
+            seller.balance += totalPrice;
+            usersRepository.save(seller);
+            tempProduct.quantity -= request.quantity;
+            productRepository.save(tempProduct);
+
+
+            BuyProductResponse response = new BuyProductResponse();
+            response.dbProductId = request.productId;
+            response.dbUserId = request.buyerId;
+            response.statusCode = 200;
+            response.message = "Product purchases successfully";
+            return response;
+        }
+    }
+
+    public List<ProductPurchase> allPurchases(){
+        return (List<ProductPurchase>) productPurchaseRepository.findAll();
+    }
+    public List<ProductPurchase> buyerPurchaseList(int id){
+        List<ProductPurchase> list = new ArrayList<>();
+        List<ProductPurchase> all = (List<ProductPurchase>)productPurchaseRepository.findAll();
+
+        for(ProductPurchase purchase: all) {
+            if(purchase.buyer_id == id) list.add(purchase);
+        }
+        return list;
     }
 }

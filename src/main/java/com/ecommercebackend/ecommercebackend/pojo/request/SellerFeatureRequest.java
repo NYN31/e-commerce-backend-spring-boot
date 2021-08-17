@@ -1,6 +1,6 @@
 package com.ecommercebackend.ecommercebackend.pojo.request;
 
-public class BuyerFeatureRequest {
+public class SellerFeatureRequest {
     public String name;
     public String email;
     public String company ;
@@ -8,9 +8,3 @@ public class BuyerFeatureRequest {
     public Double balance;
     public String imageURL;
 }
-
-/*
-{
-
-}
-* */

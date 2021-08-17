@@ -6,5 +6,5 @@ import org.springframework.data.repository.CrudRepository;
 
 
 public interface ProductRatingsRepository extends CrudRepository<ProductRating, Integer> {
-    ProductRating findById(int user_id);
+
 }
