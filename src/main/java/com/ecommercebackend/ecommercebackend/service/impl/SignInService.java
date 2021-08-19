@@ -31,9 +31,9 @@ public class SignInService implements SignInInterface {
         if(auth.isPresent() && auth.get().isActive) {
             return auth.get().token;
         }
-        
 
-        Auth authen = new Auth();
+
+        Auth authen = authRepository.findByUserId(user.id);
         authen.userId = user.id;
         authen.isActive = true;
         authen.token = Base64.getEncoder().encodeToString(email.getBytes());
