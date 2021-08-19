@@ -9,12 +9,12 @@ public class Auth {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     public Integer id ;
-    @Column(name = "email")
-    public String email ;
-    @Column(name = "password")
-    public String password ;
-    @Column(name = "type")
-    public String type ;
-    @Column(name = "status")
-    public Integer status ;
+    @Column(name = "userId")
+    public Integer userId ;
+    @Column(name = "token")
+    public String token;
+    @Column(name = "isActive")
+    public Boolean isActive ;
 }
+
+

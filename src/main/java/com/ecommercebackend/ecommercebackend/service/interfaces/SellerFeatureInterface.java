@@ -11,9 +11,9 @@ import java.util.List;
 public interface SellerFeatureInterface {
     SellerFeatureResponse editProfile(SellerFeatureRequest request);
     PasswordChangeResponse changePassword(PasswordChangeRequest request);
-    BankAccountResponse addBankAccount(BankAccountRequest request);
+    BankAccountResponse addBankAccount(BankAccountRequest request) throws Exception;
 //    List<BankAccount> findAllBankAccounts();
-    changeMoneyResponse withdrawMoney(changeMoneyRequest request);
+    changeMoneyResponse withdrawMoney(changeMoneyRequest request) throws Exception;
     List<ProductPurchase> allSells();
     List<ProductPurchase> sellerSellList(int id);
 }

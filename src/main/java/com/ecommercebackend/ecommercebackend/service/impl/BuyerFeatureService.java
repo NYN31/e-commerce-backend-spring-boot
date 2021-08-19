@@ -8,9 +8,8 @@ import com.ecommercebackend.ecommercebackend.service.interfaces.BuyerFeatureInte
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import javax.validation.constraints.Email;
+import java.util.*;
 
 @Service
 public class BuyerFeatureService implements BuyerFeatureInterface {
@@ -24,12 +23,21 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
     BankAccountRepository bankAccountRepository;
     @Autowired
     ProductPurchaseRepository productPurchaseRepository;
+    @Autowired
+    AuthRepository authRepository;
+    @Autowired
+    SignInService signInService;
+
+    private User activeUser = null;
 
     @Override
-    public BuyerFeatureResponse editProfile(BuyerFeatureRequest request) {
+    public BuyerFeatureResponse editProfile(BuyerFeatureRequest request) throws Exception {
         User user = usersRepository.findByEmail(request.email);
 
         if(user != null) {
+            String token = Base64.getEncoder().encodeToString(user.email.getBytes());
+            Boolean active = signInService.isSignIn(token);
+
             user.imageUrl = request.imageURL;
             user.company = request.company;
             user.address = request.address;
@@ -127,11 +135,15 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
         return response;
     }
 
-    public BankAccountResponse addBankAccount(BankAccountRequest request) {
+    public BankAccountResponse addBankAccount(BankAccountRequest request) throws Exception{
         List<BankAccount> bankAccountList =
                 (List<BankAccount>) bankAccountRepository.findAll();
+        User user = (User) usersRepository.findByEmail(request.email);
+        if(user == null) {
+            throw new Exception("Invalid Credential");
+        }
         for(BankAccount account: bankAccountList) {
-            if(account.email.equals(request.email) && account.bankName.equals(request.bankName)
+            if(account.userId.intValue() == user.id.intValue() && account.bankName.equals(request.bankName)
                     && account.bankBranch.equals(request.bankBranch)) {
                 BankAccountResponse response = new BankAccountResponse();
                 response.statusCode = 425;
@@ -140,7 +152,7 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
             }
         }
         BankAccount bankAccount = new BankAccount();
-        bankAccount.email = request.email;
+        bankAccount.userId = user.id;
         bankAccount.bankName = request.bankName;
         bankAccount.bankBranch = request.bankBranch;
         bankAccountRepository.save(bankAccount);
@@ -154,13 +166,18 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
         return (List<BankAccount>) bankAccountRepository.findAll();
     }
 
-    public changeMoneyResponse addMoney(changeMoneyRequest request) {
+    public changeMoneyResponse addMoney(changeMoneyRequest request) throws Exception{
         List<BankAccount> bankAccountList =
                 (List<BankAccount>) bankAccountRepository.findAll();
+        User user = (User) usersRepository.findByEmail(request.email);
+        if(user == null) {
+            throw new Exception("Invalide Credential");
+        }
+
         for(BankAccount bankAccount: bankAccountList) {
-            if(bankAccount.email.equals(request.email) && bankAccount.bankName.equals(request.bankName)
+            if(bankAccount.id == user.id && bankAccount.bankName.equals(request.bankName)
                     && bankAccount.bankBranch.equals(request.bankBranch)) {
-                User user = usersRepository.findByEmail(bankAccount.email);
+                user = usersRepository.findById(user.id.intValue());
                 Double newBalance = user.balance + request.balance;
                 user.balance = newBalance;
                 usersRepository.save(user);
@@ -180,18 +197,18 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
 
     public BuyProductResponse buyProduct(BuyProductRequest request) {
         User buyer = usersRepository.findById((int)request.buyerId);
-        User seller = usersRepository.findById((int)request.sellerId);
         Product tempProduct = productRepository.findById((int)request.productId);
+        User seller = usersRepository.findById(tempProduct.seller_id.intValue());
 
         String validationMessage = "";
         int totalPrice = (int)request.quantity * (int)tempProduct.price;
         // if users balance is greater equal than the request quantity
         // multiplied by requested product price
         if(buyer.balance < totalPrice) {
-            validationMessage += "$Insufficient balance ";
+            validationMessage += "Insufficient balance ";
         }
         if(tempProduct.quantity < (int)request.quantity) {
-            validationMessage += "$Insufficient quantity";
+            validationMessage += "Insufficient quantity";
         }
 
         if(validationMessage.length() > 0) {
@@ -205,10 +222,8 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
             ProductPurchase productPurchase = new ProductPurchase();
             productPurchase.product_id = request.productId;
             productPurchase.buyer_id = request.buyerId;
-
-            productPurchase.seller_id = request.sellerId;
             productPurchase.quantity = request.quantity;
-            productPurchase.price = totalPrice;
+            productPurchase.purchasePrice = totalPrice;
             productPurchaseRepository.save(productPurchase);
 
             buyer.balance -= totalPrice;

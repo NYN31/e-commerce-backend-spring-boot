@@ -1,16 +1,20 @@
 package com.ecommercebackend.ecommercebackend.controller;
 
 import com.ecommercebackend.ecommercebackend.db.entity.BankAccount;
+import com.ecommercebackend.ecommercebackend.db.entity.Product;
 import com.ecommercebackend.ecommercebackend.db.entity.ProductPurchase;
+import com.ecommercebackend.ecommercebackend.db.repo.AuthRepository;
 import com.ecommercebackend.ecommercebackend.pojo.request.*;
 import com.ecommercebackend.ecommercebackend.pojo.response.*;
 import com.ecommercebackend.ecommercebackend.service.impl.BuyerFeatureService;
+import com.ecommercebackend.ecommercebackend.service.impl.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/buyers")
 public class BuyerFeatureController {
 
     /*
@@ -27,23 +31,30 @@ public class BuyerFeatureController {
 */
     @Autowired
     BuyerFeatureService buyerFeatureService;
-
+    @Autowired
+    ProductService productService;
+    @Autowired
+    AuthRepository authRepository;
 
 
     // 1. Edit profile
-    @PutMapping("/update-buyer-profile")
-    public BuyerFeatureResponse editProfile(@RequestBody BuyerFeatureRequest request){
+    @PutMapping("/update-profile")
+    public BuyerFeatureResponse editProfile(@RequestBody BuyerFeatureRequest request) throws Exception{
         return buyerFeatureService.editProfile(request);
     }
-    @PutMapping("/change-buyer-password")
+    @PutMapping("/update-password")
     public PasswordChangeResponse changePassword(@RequestBody PasswordChangeRequest request){
         return buyerFeatureService.changePassword(request);
     }
 
     // 2. show all products [Already implemented at product controller]
+    @GetMapping("/products")
+    public List<Product> allProducts() {
+        return productService.allProducts() ;
+    }
 
     // 3. buy a product
-    @PostMapping("/buy-a-product")
+    @PostMapping("/buy-product")
     public BuyProductResponse buyProduct(@RequestBody BuyProductRequest request){
         return buyerFeatureService.buyProduct(request);
     }
@@ -66,8 +77,8 @@ public class BuyerFeatureController {
     }
 
     // 6. Connect bank account
-    @PostMapping("/connect-bank-as-buyer")
-    public BankAccountResponse connectWithBank(@RequestBody BankAccountRequest request) {
+    @PostMapping("/connect-bank")
+    public BankAccountResponse connectWithBank(@RequestBody BankAccountRequest request) throws Exception{
         return buyerFeatureService.addBankAccount(request);
     }
     @GetMapping("/banks")
@@ -77,7 +88,7 @@ public class BuyerFeatureController {
 
     // 7. add money to account from the bank
     @PutMapping("/add-money")
-    public changeMoneyResponse addMoneyToAccount(@RequestBody changeMoneyRequest request){
+    public changeMoneyResponse addMoneyToAccount(@RequestBody changeMoneyRequest request) throws Exception{
         return buyerFeatureService.addMoney(request);
     }
 

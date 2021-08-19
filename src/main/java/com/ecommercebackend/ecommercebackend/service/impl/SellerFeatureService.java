@@ -86,11 +86,16 @@ public class SellerFeatureService implements SellerFeatureInterface {
         }
     }
 
-    public BankAccountResponse addBankAccount(BankAccountRequest request) {
+    @Override
+    public BankAccountResponse addBankAccount(BankAccountRequest request) throws Exception{
         List<BankAccount> bankAccountList =
                 (List<BankAccount>) bankAccountRepository.findAll();
+        User user = (User) usersRepository.findByEmail(request.email);
+        if(user == null) {
+            throw new Exception("Invalid Credential");
+        }
         for(BankAccount account: bankAccountList) {
-            if(account.email.equals(request.email) && account.bankName.equals(request.bankName)
+            if(account.userId.intValue() == user.id.intValue() && account.bankName.equals(request.bankName)
                     && account.bankBranch.equals(request.bankBranch)) {
                 BankAccountResponse response = new BankAccountResponse();
                 response.statusCode = 425;
@@ -99,7 +104,7 @@ public class SellerFeatureService implements SellerFeatureInterface {
             }
         }
         BankAccount bankAccount = new BankAccount();
-        bankAccount.email = request.email;
+        bankAccount.userId = user.id;
         bankAccount.bankName = request.bankName;
         bankAccount.bankBranch = request.bankBranch;
         bankAccountRepository.save(bankAccount);
@@ -110,13 +115,19 @@ public class SellerFeatureService implements SellerFeatureInterface {
         return response;
     }
 
-    public changeMoneyResponse withdrawMoney(changeMoneyRequest request){
+    public changeMoneyResponse withdrawMoney(changeMoneyRequest request) throws Exception{
         List<BankAccount> bankAccountList =
                 (List<BankAccount>) bankAccountRepository.findAll();
+
+        User user = (User) usersRepository.findByEmail(request.email);
+        if(user == null) {
+            throw new Exception("Invalide Credential");
+        }
+
         for(BankAccount bankAccount: bankAccountList) {
-            if(bankAccount.email.equals(request.email) && bankAccount.bankName.equals(request.bankName)
+            if(bankAccount.userId.intValue() == user.id && bankAccount.bankName.equals(request.bankName)
                     && bankAccount.bankBranch.equals(request.bankBranch)) {
-                User user = usersRepository.findByEmail(bankAccount.email);
+                user = usersRepository.findById(user.id.intValue());
                 if(user.balance < request.balance) {
                     changeMoneyResponse response = new changeMoneyResponse();
                     response.statusCode = 425;

@@ -9,8 +9,8 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     public Integer id ;
-    @Column(name = "email")
-    public String email;
+    @Column(name = "user_id")
+    public Integer userId;
     @Column(name = "bank_name")
     public String bankName;
     @Column(name = "bank_branch")

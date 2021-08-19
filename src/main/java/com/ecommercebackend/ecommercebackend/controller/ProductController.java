@@ -29,7 +29,7 @@ public class ProductController {
     ProductService productService;
 
 
-    // 1. Adding product
+    // 1. Adding product X
     @PostMapping(
             value = "",
             consumes= MediaType.APPLICATION_JSON_VALUE,
@@ -39,7 +39,7 @@ public class ProductController {
         return productService.addProduct(request);
     }
 
-    // 2. All Products
+    // 2. All Products X
     @GetMapping("")
     public List<Product> allProducts() {
         return productService.allProducts() ;

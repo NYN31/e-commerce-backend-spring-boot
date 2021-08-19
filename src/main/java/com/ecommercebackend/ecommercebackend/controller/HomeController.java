@@ -3,8 +3,10 @@ package com.ecommercebackend.ecommercebackend.controller;
 
 import com.ecommercebackend.ecommercebackend.db.entity.*;
 import com.ecommercebackend.ecommercebackend.db.repo.*;
+import com.ecommercebackend.ecommercebackend.pojo.request.SignInRequest;
 import com.ecommercebackend.ecommercebackend.pojo.request.SignupRequest;
 import com.ecommercebackend.ecommercebackend.pojo.response.SignupResponse;
+import com.ecommercebackend.ecommercebackend.service.impl.SignInService;
 import com.ecommercebackend.ecommercebackend.service.impl.SignupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -23,6 +25,9 @@ public class HomeController {
     SignupService signupService;
     @Autowired
     UsersRepository usersRepository ;
+    @Autowired
+    SignInService signInService;
+
     // welcome page
     @GetMapping("/")
     public String index() {
@@ -38,7 +43,7 @@ public class HomeController {
             consumes= MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public SignupResponse addBuyer(@RequestBody SignupRequest request) {
+    public SignupResponse addBuyer(@RequestBody SignupRequest request) throws Exception{
         return signupService.signup(request, "buyer");
     }
 
@@ -48,7 +53,7 @@ public class HomeController {
             consumes= MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public SignupResponse addSeller(@RequestBody SignupRequest request) {
+    public SignupResponse addSeller(@RequestBody SignupRequest request) throws Exception {
         return signupService.signup(request, "seller");
     }
 
@@ -58,5 +63,14 @@ public class HomeController {
         return (List<User>) usersRepository.findAll() ;
     }
 
+    // 4. sign in
+    @PutMapping(
+            value = "/sign-in",
+            consumes= MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public String signIn(@RequestBody SignupRequest request) throws Exception{
+        return signInService.signIn(request.email, request.password);
+    }
 
 }

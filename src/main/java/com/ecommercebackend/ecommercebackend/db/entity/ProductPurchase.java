@@ -9,16 +9,12 @@ public class ProductPurchase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     public Integer id ;
-    @Column(name = "product_name")
-    public String product_name ;
     @Column(name = "product_id")
     public Integer product_id ;
     @Column(name = "buyer_id")
     public Integer buyer_id ;
-    @Column(name = "price")
-    public Integer price ;
+    @Column(name = "purchase_price")
+    public Integer purchasePrice ;
     @Column(name = "quantity")
     public Integer quantity ;
-    @Column(name = "seller_id")
-    public Integer seller_id ;
 }
