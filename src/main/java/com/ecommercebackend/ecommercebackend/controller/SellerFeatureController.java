@@ -43,13 +43,13 @@ public class SellerFeatureController {
             consumes= MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ProductResponse addProduct(@RequestBody ProductRequest request) {
+    public ProductResponse addProduct(@RequestBody ProductRequest request) throws Exception{
         return productService.addProduct(request);
     }
         // ii. Find product by product id
     @GetMapping("/products/{id}")
     public Product findProductById(@PathVariable int id) throws ProductNotFoundException {
-        Product product = productService.findProductById(id) ;
+        Product product = productService.findProductById(id);
         if(product != null) {
             return product ;
         } else {
@@ -59,16 +59,16 @@ public class SellerFeatureController {
 
         // iii. Update product details
     @PutMapping("/products")
-    public ProductResponse updateProduct(@RequestBody ProductRequest request) {
+    public ProductResponse updateProduct(@RequestBody ProductRequest request) throws Exception{
         return productService.updateProduct(request);
     }
 
         // iv. Delete product by id
-    @DeleteMapping("/products/{id}")
-    public ProductResponse deleteProduct(@PathVariable int id) {
+    @DeleteMapping("/products/{id}/{token}")
+    public ProductResponse deleteProduct(@PathVariable int id, @PathVariable String token) throws Exception{
         Product product = productService.findProductById(id);
         if(product != null) {
-            return productService.deleteProduct(id);
+            return productService.deleteProduct(id, token);
         }
         else {
             throw new ProductNotFoundException("Product id " + id + " is not found");
@@ -77,8 +77,8 @@ public class SellerFeatureController {
 
     // 2. view products [This operation also has already done at producct controller]
     @GetMapping("/products")
-    public List<Product> allProducts() {
-        return productService.allProducts() ;
+    public List<Product> allProducts() throws Exception{
+        return productService.allProducts();
     }
 
     // 3. Connect with bank
@@ -87,31 +87,26 @@ public class SellerFeatureController {
         return sellerFeatureService.addBankAccount(request);
     }
 
-    // 4. Check sell histroy of seller
+    // 4. Check sell histroy of a seller
     @GetMapping("/sells")
-    public List<ProductPurchase> purchasesList() {
-        return sellerFeatureService.allSells();
-    }
-    @GetMapping("/sells/{id}")
-    public List<ProductPurchase> purchasesListByUser(@PathVariable int id){
-        return sellerFeatureService.sellerSellList(id);
+    public List<ProductPurchase> purchasesListByUser(@RequestBody ProductSellAndPurchaseRequest request) throws Exception{
+        return sellerFeatureService.sellerSellList(request);
     }
 
     // 5. Withdraw money from account
     @PutMapping("/withdraw-money")
-    public changeMoneyResponse addMoneyToAccount(@RequestBody changeMoneyRequest request) throws Exception{
+    public ChangeMoneyResponse addMoneyToAccount(@RequestBody ChangeMoneyRequest request) throws Exception{
         return sellerFeatureService.withdrawMoney(request);
     }
 
     // 6. Edit profile
     @PutMapping("/update-profile")
-    public SellerFeatureResponse editProfile(@RequestBody SellerFeatureRequest request){
+    public SellerFeatureResponse editProfile(@RequestBody SellerFeatureRequest request) throws Exception{
         return sellerFeatureService.editProfile(request);
     }
-    @PutMapping("/update-password")
-    public PasswordChangeResponse changePassword(@RequestBody PasswordChangeRequest request){
+    @PutMapping("/change-password")
+    public PasswordChangeResponse changePassword(@RequestBody PasswordChangeRequest request) throws Exception{
         return sellerFeatureService.changePassword(request);
     }
-
 
 }

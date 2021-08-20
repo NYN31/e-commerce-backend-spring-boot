@@ -8,7 +8,6 @@ import com.ecommercebackend.ecommercebackend.service.interfaces.BuyerFeatureInte
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.validation.constraints.Email;
 import java.util.*;
 
 @Service
@@ -25,98 +24,105 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
     ProductPurchaseRepository productPurchaseRepository;
     @Autowired
     AuthRepository authRepository;
-    @Autowired
-    SignInService signInService;
 
-    private User activeUser = null;
 
     @Override
     public BuyerFeatureResponse editProfile(BuyerFeatureRequest request) throws Exception {
-        User user = usersRepository.findByEmail(request.email);
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(user.get().type.equals("seller")) {
+            throw new Exception("You(seller) don't have the permission");
+        }
 
-        if(user != null) {
-            String token = Base64.getEncoder().encodeToString(user.email.getBytes());
-            Boolean active = signInService.isSignIn(token);
-
-            user.imageUrl = request.imageURL;
-            user.company = request.company;
-            user.address = request.address;
-            user.email = request.email;
-            user.balance = request.balance;
-            user.name = request.name;
-            usersRepository.save(user);
+        if(user.isPresent()) {
+            user.get().imageUrl = request.imageURL;
+            user.get().company = request.company;
+            user.get().address = request.address;
+            user.get().email = request.email;
+            user.get().balance = request.balance;
+            user.get().name = request.name;
+            usersRepository.save(user.get());
 
             BuyerFeatureResponse response = new BuyerFeatureResponse();
-            response.dbId = user.id;
+            response.dbId = user.get().id;
             response.statusCode = 200;
             response.message = request.name + "'s profile updated successfully";
             return response;
         } else {
-            BuyerFeatureResponse response = new BuyerFeatureResponse();
-            response.statusCode = 425;
-            response.message = "User not found, select right email pls";
-            return response;
+            throw new Exception("Invalid Credential");
         }
     }
 
     @Override
-    public PasswordChangeResponse changePassword(PasswordChangeRequest request) {
-        User user = usersRepository.findByEmail(request.email);
+    public PasswordChangeResponse changePassword(PasswordChangeRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
 
-        String validationMessage = "";
-        if(user != null) {
-            if(user != null && !user.name.equals(request.name)) { validationMessage += "Invalid name ";}
-            if(user != null && !user.password.equals(request.currentPassword)) { validationMessage += "invalid password.";}
-            if(validationMessage.length() > 0) {
-                PasswordChangeResponse response = new PasswordChangeResponse();
-                response.message = validationMessage ;
-                response.statusCode = 425;
-                return response;
-            }else {
-                user.password = request.newPassword;
-                usersRepository.save(user);
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(user.get().type.equals("seller")) {
+            throw new Exception("You(seller) don't have the permission");
+        }
 
+        if(user.isPresent()) {
+            if(!user.get().password.equals(request.currentPassword)) {
+                throw new Exception("Invalid Credential");
+            }else{
+                user.get().password = request.newPassword;
+                usersRepository.save(user.get());
+                auth.get().isActive = false;
+                authRepository.save(auth.get());
                 PasswordChangeResponse response = new PasswordChangeResponse();
                 response.message = "Your password has been changed successfully" ;
                 response.statusCode = 200;
                 return response;
             }
-
         }else {
-            PasswordChangeResponse response = new PasswordChangeResponse();
-            response.message = "Invalid email" ;
-            response.statusCode = 425;
-            return response;
+            throw new Exception("Invalid Credentail");
         }
     }
     @Override
-    public ProductResponse ratingProduct(ProductRatingRequest request) {
+    public ProductResponse ratingProduct(ProductRatingRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(!user.isPresent()) {
+            throw new Exception("Invalid credential");
+        }
+        if(user.get().type.equals("seller")) {
+            throw new Exception("You(seller) don't have the permission");
+        }
+
         List<ProductRating> productRatingList =
                 (List<ProductRating>) productRatingsRepository.findAll();
+
+        System.out.println("User id: " + user.get().id);
         for(ProductRating pr: productRatingList) {
-            if(pr.product_id == request.product_id &&
-                pr.user_id == request.user_id) {
-                ProductResponse response = new ProductResponse();
-                response.statusCode = 425;
-                response.message = "You are already rated product";
-                response.dbId = pr.product_id;
-                return response;
+            if(pr.product_id == request.productId &&
+                pr.user_id == user.get().id) {
+                throw new Exception("You are already rated the product");
             }
         }
         ProductRating rating = new ProductRating();
-        rating.product_id = request.product_id;
-        rating.user_id = request.user_id;
+        rating.product_id = request.productId;
+        rating.user_id = user.get().id;
         rating.rating = request.rating;
         productRatingsRepository.save(rating);
 
         productRatingList = (List<ProductRating>) productRatingsRepository.findAll();
 
-        int id = request.product_id;
-        Product product = productRepository.findById(id);
+        int id = request.productId;
+        Optional<Product> product = productRepository.findById(id);
         Double sumOfRating = 0.0;
         int totalGivenRating = 0;
         for(ProductRating productRating: productRatingList) {
-            if(productRating.product_id == request.product_id) {
+            if(productRating.product_id == request.productId) {
                 totalGivenRating += 1;
                 sumOfRating += productRating.rating;
             }
@@ -124,10 +130,10 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
 
         Double rat = sumOfRating / totalGivenRating ;
         rat = Math.round(rat * 100.0) / 100.0 ;
-        product.rating = rat;
+        product.get().rating = rat;
 
-        productRepository.save(product);
-        System.out.println("product rating: " + product.rating);
+        productRepository.save(product.get());
+
         ProductResponse response = new ProductResponse();
         response.statusCode = 200;
         response.message = "You are successfully rated product id - " + id;
@@ -136,23 +142,29 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
     }
 
     public BankAccountResponse addBankAccount(BankAccountRequest request) throws Exception{
-        List<BankAccount> bankAccountList =
-                (List<BankAccount>) bankAccountRepository.findAll();
-        User user = (User) usersRepository.findByEmail(request.email);
-        if(user == null) {
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(!user.isPresent()) {
             throw new Exception("Invalid Credential");
         }
+        if(user.get().type.equals("seller")) {
+            throw new Exception("You(seller) don't have the permission");
+        }
+
+        List<BankAccount> bankAccountList =
+                (List<BankAccount>) bankAccountRepository.findAll();
+
         for(BankAccount account: bankAccountList) {
-            if(account.userId.intValue() == user.id.intValue() && account.bankName.equals(request.bankName)
+            if(account.userId.intValue() == user.get().id.intValue() && account.bankName.equals(request.bankName)
                     && account.bankBranch.equals(request.bankBranch)) {
-                BankAccountResponse response = new BankAccountResponse();
-                response.statusCode = 425;
-                response.message = "You are already connect with this bank";
-                return response;
+                throw new Exception("You are already connect with this bank");
             }
         }
         BankAccount bankAccount = new BankAccount();
-        bankAccount.userId = user.id;
+        bankAccount.userId = user.get().id;
         bankAccount.bankName = request.bankName;
         bankAccount.bankBranch = request.bankBranch;
         bankAccountRepository.save(bankAccount);
@@ -162,97 +174,117 @@ public class BuyerFeatureService implements BuyerFeatureInterface {
         response.message = "You are now connect with this bank";
         return response;
     }
-    public List<BankAccount> findAllBankAccounts() {
-        return (List<BankAccount>) bankAccountRepository.findAll();
-    }
 
-    public changeMoneyResponse addMoney(changeMoneyRequest request) throws Exception{
-        List<BankAccount> bankAccountList =
-                (List<BankAccount>) bankAccountRepository.findAll();
-        User user = (User) usersRepository.findByEmail(request.email);
-        if(user == null) {
+    public ChangeMoneyResponse addMoney(ChangeMoneyRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(!user.isPresent()) {
             throw new Exception("Invalide Credential");
         }
+        if(user.get().type.equals("seller")) {
+            throw new Exception("Sellers have no permission to add money in account");
+        }
+
+        List<BankAccount> bankAccountList =
+                (List<BankAccount>) bankAccountRepository.findAll();
+
 
         for(BankAccount bankAccount: bankAccountList) {
-            if(bankAccount.id == user.id && bankAccount.bankName.equals(request.bankName)
+            if(bankAccount.userId == user.get().id && bankAccount.bankName.equals(request.bankName)
                     && bankAccount.bankBranch.equals(request.bankBranch)) {
-                user = usersRepository.findById(user.id.intValue());
-                Double newBalance = user.balance + request.balance;
-                user.balance = newBalance;
-                usersRepository.save(user);
+                user = Optional.ofNullable(usersRepository.findById(user.get().id.intValue()));
+                Double newBalance = user.get().balance + request.balance;
+                user.get().balance = newBalance;
+                usersRepository.save(user.get());
 
-                changeMoneyResponse response = new changeMoneyResponse();
-                response.dbId = user.id;
+                ChangeMoneyResponse response = new ChangeMoneyResponse();
                 response.statusCode = 200;
-                response.message = "Added money from bank to " + user.name + "'s account";
+                response.message = "Added money from bank to " + user.get().name + "'s account";
                 return response;
             }
         }
-        changeMoneyResponse response = new changeMoneyResponse();
-        response.statusCode = 425;
-        response.message = "Your given information is wrong";
+        throw new Exception("Your given information is wrong\\nMoney do not added successfully");
+    }
+
+    public BuyProductResponse buyProduct(BuyProductRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+
+        if(!user.isPresent()) {
+            throw new Exception("Invalide Credential");
+        }
+        if(user.get().type.equals("seller")) {
+            throw new Exception("Sellers have no permission to buy a product");
+        }
+
+        Optional<Product> tempProduct = productRepository.findById(request.productId);
+        User seller = usersRepository.findById(tempProduct.get().sellerId.intValue());
+
+        System.out.println(user.get().id + " " + tempProduct.get().id + " " + seller.id);
+
+        int totalPrice = request.quantity * tempProduct.get().price;
+        // if users balance is greater equal than the request quantity
+        // multiplied by requested product price
+        if(user.get().balance < totalPrice) {
+            throw new Exception("Insufficient balance");
+        }
+        if(tempProduct.get().quantity < request.quantity) {
+            throw new Exception("Insufficient quantity");
+        }
+
+        ProductPurchase productPurchase = new ProductPurchase();
+        productPurchase.product_id = request.productId;
+        productPurchase.buyer_id = user.get().id;
+        productPurchase.quantity = request.quantity;
+        productPurchase.purchasePrice = totalPrice;
+        productPurchaseRepository.save(productPurchase);
+
+        user.get().balance -= totalPrice;
+        usersRepository.save(user.get());
+        seller.balance += totalPrice;
+        usersRepository.save(seller);
+        tempProduct.get().quantity -= request.quantity;
+        productRepository.save(tempProduct.get());
+
+
+        BuyProductResponse response = new BuyProductResponse();
+        response.statusCode = 200;
+        response.message = "Product purchases successfully";
         return response;
     }
 
-    public BuyProductResponse buyProduct(BuyProductRequest request) {
-        User buyer = usersRepository.findById((int)request.buyerId);
-        Product tempProduct = productRepository.findById((int)request.productId);
-        User seller = usersRepository.findById(tempProduct.seller_id.intValue());
-
-        String validationMessage = "";
-        int totalPrice = (int)request.quantity * (int)tempProduct.price;
-        // if users balance is greater equal than the request quantity
-        // multiplied by requested product price
-        if(buyer.balance < totalPrice) {
-            validationMessage += "Insufficient balance ";
+    public List<ProductPurchase> allPurchases(ProductSellAndPurchaseRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
         }
-        if(tempProduct.quantity < (int)request.quantity) {
-            validationMessage += "Insufficient quantity";
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(user.get().type.equals("seller")) {
+            throw new Exception("You(seller) don't have the permission");
         }
-
-        if(validationMessage.length() > 0) {
-            BuyProductResponse response = new BuyProductResponse();
-            response.dbProductId = request.productId;
-            response.dbUserId = request.buyerId;
-            response.statusCode = 425;
-            response.message = validationMessage;
-            return response;
-        }else {
-            ProductPurchase productPurchase = new ProductPurchase();
-            productPurchase.product_id = request.productId;
-            productPurchase.buyer_id = request.buyerId;
-            productPurchase.quantity = request.quantity;
-            productPurchase.purchasePrice = totalPrice;
-            productPurchaseRepository.save(productPurchase);
-
-            buyer.balance -= totalPrice;
-            usersRepository.save(buyer);
-            seller.balance += totalPrice;
-            usersRepository.save(seller);
-            tempProduct.quantity -= request.quantity;
-            productRepository.save(tempProduct);
-
-
-            BuyProductResponse response = new BuyProductResponse();
-            response.dbProductId = request.productId;
-            response.dbUserId = request.buyerId;
-            response.statusCode = 200;
-            response.message = "Product purchases successfully";
-            return response;
-        }
-    }
-
-    public List<ProductPurchase> allPurchases(){
         return (List<ProductPurchase>) productPurchaseRepository.findAll();
     }
-    public List<ProductPurchase> buyerPurchaseList(int id){
-        List<ProductPurchase> list = new ArrayList<>();
-        List<ProductPurchase> all = (List<ProductPurchase>)productPurchaseRepository.findAll();
-
-        for(ProductPurchase purchase: all) {
-            if(purchase.buyer_id == id) list.add(purchase);
+    public List<ProductPurchase> buyerPurchaseList(ProductSellAndPurchaseRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
         }
-        return list;
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(user.get().type.equals("seller")) {
+            throw new Exception("You(seller) don't have the permission");
+        }
+        List<ProductPurchase> productPurchasesListByBuyer = new ArrayList<>();
+        List<ProductPurchase> productPurchasesList = (List<ProductPurchase>)productPurchaseRepository.findAll();
+
+        for(ProductPurchase purchase: productPurchasesList) {
+            if(purchase.buyer_id == auth.get().userId) productPurchasesListByBuyer.add(purchase);
+        }
+        return productPurchasesListByBuyer;
     }
 }

@@ -1,22 +1,17 @@
 package com.ecommercebackend.ecommercebackend.service.impl;
 
-import com.ecommercebackend.ecommercebackend.db.entity.BankAccount;
-import com.ecommercebackend.ecommercebackend.db.entity.Product;
-import com.ecommercebackend.ecommercebackend.db.entity.ProductPurchase;
-import com.ecommercebackend.ecommercebackend.db.entity.User;
+import com.ecommercebackend.ecommercebackend.db.entity.*;
 import com.ecommercebackend.ecommercebackend.db.repo.*;
-import com.ecommercebackend.ecommercebackend.pojo.request.BankAccountRequest;
-import com.ecommercebackend.ecommercebackend.pojo.request.PasswordChangeRequest;
-import com.ecommercebackend.ecommercebackend.pojo.request.SellerFeatureRequest;
-import com.ecommercebackend.ecommercebackend.pojo.request.changeMoneyRequest;
+import com.ecommercebackend.ecommercebackend.pojo.request.*;
 import com.ecommercebackend.ecommercebackend.pojo.response.*;
 import com.ecommercebackend.ecommercebackend.pojo.response.SellerFeatureResponse;
 import com.ecommercebackend.ecommercebackend.service.interfaces.SellerFeatureInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SellerFeatureService implements SellerFeatureInterface {
@@ -30,81 +25,92 @@ public class SellerFeatureService implements SellerFeatureInterface {
     BankAccountRepository bankAccountRepository;
     @Autowired
     ProductPurchaseRepository productPurchaseRepository;
+    @Autowired
+    AuthRepository authRepository;
 
-    public SellerFeatureResponse editProfile(SellerFeatureRequest request) {
-        User user = usersRepository.findByEmail(request.email);
+    public SellerFeatureResponse editProfile(SellerFeatureRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(user.get().type.equals("buyer")) {
+            throw new Exception("You(buyer) don't have the permission");
+        }
 
-        if(user != null) {
-            user.imageUrl = request.imageURL;
-            user.company = request.company;
-            user.address = request.address;
-            user.email = request.email;
-            user.balance = request.balance;
-            user.name = request.name;
-            usersRepository.save(user);
+        if(user.isPresent()) {
+            user.get().imageUrl = request.imageURL;
+            user.get().company = request.company;
+            user.get().address = request.address;
+            user.get().email = request.email;
+            user.get().balance = request.balance;
+            user.get().name = request.name;
+            usersRepository.save(user.get());
 
             SellerFeatureResponse response = new SellerFeatureResponse();
-            response.dbId = user.id;
+            response.dbId = user.get().id;
             response.statusCode = 200;
             response.message = request.name + "'s profile updated successfully";
             return response;
         } else {
-            SellerFeatureResponse response = new SellerFeatureResponse();
-            response.statusCode = 425;
-            response.message = "User not found, select right email pls";
-            return response;
+            throw new Exception("Invalid Credential");
         }
     }
 
-    public PasswordChangeResponse changePassword(PasswordChangeRequest request){
-        User user = usersRepository.findByEmail(request.email);
+    public PasswordChangeResponse changePassword(PasswordChangeRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
 
-        String validationMessage = "";
-        if(user != null) {
-            if(user != null && !user.name.equals(request.name)) { validationMessage += "Invalid name ";}
-            if(user != null && !user.password.equals(request.currentPassword)) { validationMessage += "invalid password.";}
-            if(validationMessage.length() > 0) {
-                PasswordChangeResponse response = new PasswordChangeResponse();
-                response.message = validationMessage ;
-                response.statusCode = 425;
-                return response;
-            }else {
-                user.password = request.newPassword;
-                usersRepository.save(user);
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(user.get().type.equals("buyer")) {
+            throw new Exception("You(buyer) don't have the permission");
+        }
 
+        if(user.isPresent()) {
+            if(!user.get().password.equals(request.currentPassword)) {
+                throw new Exception("Invalid Credential");
+            }else{
+                user.get().password = request.newPassword;
+                usersRepository.save(user.get());
+                auth.get().isActive = false;
+                authRepository.save(auth.get());
                 PasswordChangeResponse response = new PasswordChangeResponse();
                 response.message = "Your password has been changed successfully" ;
                 response.statusCode = 200;
                 return response;
             }
-
         }else {
-            PasswordChangeResponse response = new PasswordChangeResponse();
-            response.message = "Invalid email" ;
-            response.statusCode = 425;
-            return response;
+            throw new Exception("Invalid Credentail");
         }
     }
 
     @Override
     public BankAccountResponse addBankAccount(BankAccountRequest request) throws Exception{
-        List<BankAccount> bankAccountList =
-                (List<BankAccount>) bankAccountRepository.findAll();
-        User user = (User) usersRepository.findByEmail(request.email);
-        if(user == null) {
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(!user.isPresent()) {
             throw new Exception("Invalid Credential");
         }
+        if(user.get().type.equals("buyer")) {
+            throw new Exception("You(buyer) don't have the permission");
+        }
+
+        List<BankAccount> bankAccountList =
+                (List<BankAccount>) bankAccountRepository.findAll();
+
         for(BankAccount account: bankAccountList) {
-            if(account.userId.intValue() == user.id.intValue() && account.bankName.equals(request.bankName)
+            if(account.userId.intValue() == user.get().id.intValue() && account.bankName.equals(request.bankName)
                     && account.bankBranch.equals(request.bankBranch)) {
-                BankAccountResponse response = new BankAccountResponse();
-                response.statusCode = 425;
-                response.message = "You are already connect with this bank";
-                return response;
+                throw new Exception("You are already connect with this bank");
             }
         }
         BankAccount bankAccount = new BankAccount();
-        bankAccount.userId = user.id;
+        bankAccount.userId = user.get().id;
         bankAccount.bankName = request.bankName;
         bankAccount.bankBranch = request.bankBranch;
         bankAccountRepository.save(bankAccount);
@@ -115,46 +121,60 @@ public class SellerFeatureService implements SellerFeatureInterface {
         return response;
     }
 
-    public changeMoneyResponse withdrawMoney(changeMoneyRequest request) throws Exception{
+    public ChangeMoneyResponse withdrawMoney(ChangeMoneyRequest request) throws Exception{
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(!user.isPresent()) {
+            throw new Exception("Invalide Credential");
+        }
+        if(user.get().type.equals("buyer")) {
+            throw new Exception("You(buyer) don't have the permission");
+        }
+
         List<BankAccount> bankAccountList =
                 (List<BankAccount>) bankAccountRepository.findAll();
 
-        User user = (User) usersRepository.findByEmail(request.email);
-        if(user == null) {
-            throw new Exception("Invalide Credential");
-        }
-
         for(BankAccount bankAccount: bankAccountList) {
-            if(bankAccount.userId.intValue() == user.id && bankAccount.bankName.equals(request.bankName)
+            if(bankAccount.userId.intValue() == user.get().id && bankAccount.bankName.equals(request.bankName)
                     && bankAccount.bankBranch.equals(request.bankBranch)) {
-                user = usersRepository.findById(user.id.intValue());
-                if(user.balance < request.balance) {
-                    changeMoneyResponse response = new changeMoneyResponse();
-                    response.statusCode = 425;
-                    response.message = "Insufficient balance";
-                    return response;
+                if(user.get().balance < request.balance) {
+                    throw new Exception("Insufficient balance");
                 }
-                Double newBalance = user.balance - request.balance;
-                user.balance = newBalance;
-                usersRepository.save(user);
+                Double newBalance = user.get().balance - request.balance;
+                user.get().balance = newBalance;
+                usersRepository.save(user.get());
 
-                changeMoneyResponse response = new changeMoneyResponse();
-                response.dbId = user.id;
+                ChangeMoneyResponse response = new ChangeMoneyResponse();
+                response.dbId = user.get().id;
                 response.statusCode = 200;
-                response.message = "Withdrawn money from " + user.name + "'s account to bank";
+                response.message = "Withdrawn money from " + user.get().name + "'s account to bank";
                 return response;
             }
         }
-        changeMoneyResponse response = new changeMoneyResponse();
-        response.statusCode = 425;
-        response.message = "Your given information is wrong";
-        return response;
+        throw new Exception("Your given information is wrong");
     }
-    public List<ProductPurchase> allSells() {
-        return (List<ProductPurchase>) productPurchaseRepository.findAll();
-    }
-    public List<ProductPurchase> sellerSellList(int id) {
-        return (List<ProductPurchase>) productPurchaseRepository.findById(id);
+
+    public List<ProductPurchase> sellerSellList(ProductSellAndPurchaseRequest request) throws Exception {
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+        if(!auth.isPresent() || !auth.get().isActive) {
+            throw new Exception("Please log in first");
+        }
+        Optional<User> user = usersRepository.findById(auth.get().userId);
+        if(user.get().type.equals("buyer")) {
+            throw new Exception("You(buyer) don't have the permission");
+        }
+        List<ProductPurchase> productSellListBySeller = new ArrayList<>();
+        List<ProductPurchase> productPurchasesList = (List<ProductPurchase>)productPurchaseRepository.findAll();
+
+        for(ProductPurchase purchase: productPurchasesList) {
+            Optional<Product> product = productRepository.findById(purchase.product_id);
+            if(!product.isPresent()) { continue; }
+            if(product.get().sellerId == auth.get().userId) productSellListBySeller.add(purchase);
+        }
+        return productSellListBySeller;
     }
 
 }

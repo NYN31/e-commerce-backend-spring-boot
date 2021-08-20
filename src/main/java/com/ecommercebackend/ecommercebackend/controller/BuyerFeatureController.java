@@ -1,6 +1,5 @@
 package com.ecommercebackend.ecommercebackend.controller;
 
-import com.ecommercebackend.ecommercebackend.db.entity.BankAccount;
 import com.ecommercebackend.ecommercebackend.db.entity.Product;
 import com.ecommercebackend.ecommercebackend.db.entity.ProductPurchase;
 import com.ecommercebackend.ecommercebackend.db.repo.AuthRepository;
@@ -42,38 +41,38 @@ public class BuyerFeatureController {
     public BuyerFeatureResponse editProfile(@RequestBody BuyerFeatureRequest request) throws Exception{
         return buyerFeatureService.editProfile(request);
     }
-    @PutMapping("/update-password")
-    public PasswordChangeResponse changePassword(@RequestBody PasswordChangeRequest request){
+    @PutMapping("/change-password")
+    public PasswordChangeResponse changePassword(@RequestBody PasswordChangeRequest request) throws Exception{
         return buyerFeatureService.changePassword(request);
     }
 
     // 2. show all products [Already implemented at product controller]
     @GetMapping("/products")
-    public List<Product> allProducts() {
+    public List<Product> allProducts() throws Exception{
         return productService.allProducts() ;
     }
 
     // 3. buy a product
     @PostMapping("/buy-product")
-    public BuyProductResponse buyProduct(@RequestBody BuyProductRequest request){
+    public BuyProductResponse buyProduct(@RequestBody BuyProductRequest request) throws Exception{
         return buyerFeatureService.buyProduct(request);
     }
 
     // 4. rate a product
     @PostMapping("/add-rating")
-    public ProductResponse addRating(@RequestBody ProductRatingRequest request) {
+    public ProductResponse addRating(@RequestBody ProductRatingRequest request) throws Exception{
         return buyerFeatureService.ratingProduct(request);
     }
 
     // 5. check purchase history of a seller
     @GetMapping("/purchases")
-    public List<ProductPurchase> purchasesList() {
-        return buyerFeatureService.allPurchases();
+    public List<ProductPurchase> purchasesList(@RequestBody ProductSellAndPurchaseRequest request) throws Exception{
+        return buyerFeatureService.allPurchases(request);
     }
 
     @GetMapping("/purchases/{id}")
-    public List<ProductPurchase> purchasesListByUser(@PathVariable int id){
-        return buyerFeatureService.buyerPurchaseList(id);
+    public List<ProductPurchase> purchasesListByUser(@RequestBody ProductSellAndPurchaseRequest request) throws Exception{
+        return buyerFeatureService.buyerPurchaseList(request);
     }
 
     // 6. Connect bank account
@@ -81,14 +80,10 @@ public class BuyerFeatureController {
     public BankAccountResponse connectWithBank(@RequestBody BankAccountRequest request) throws Exception{
         return buyerFeatureService.addBankAccount(request);
     }
-    @GetMapping("/banks")
-    public List<BankAccount> allBankAccount() {
-        return buyerFeatureService.findAllBankAccounts();
-    }
 
     // 7. add money to account from the bank
     @PutMapping("/add-money")
-    public changeMoneyResponse addMoneyToAccount(@RequestBody changeMoneyRequest request) throws Exception{
+    public ChangeMoneyResponse addMoneyToAccount(@RequestBody ChangeMoneyRequest request) throws Exception{
         return buyerFeatureService.addMoney(request);
     }
 

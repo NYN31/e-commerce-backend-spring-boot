@@ -8,3 +8,15 @@ public class SignupRequest {
     public String address;
     public String imageURL;
 }
+
+/*
+    {
+        "name": "ridoy",
+        "email": "ridoy@gmail.com",
+        "password": "buyer",
+        "company": null,
+        "address": "ctg, Bangladesh",
+        "imageUrl": null,
+        "balance": 5000.0
+    }
+* */

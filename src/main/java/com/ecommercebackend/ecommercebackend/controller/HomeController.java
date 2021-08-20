@@ -4,9 +4,10 @@ package com.ecommercebackend.ecommercebackend.controller;
 import com.ecommercebackend.ecommercebackend.db.entity.*;
 import com.ecommercebackend.ecommercebackend.db.repo.*;
 import com.ecommercebackend.ecommercebackend.pojo.request.SignInRequest;
+import com.ecommercebackend.ecommercebackend.pojo.request.SignOutRequest;
 import com.ecommercebackend.ecommercebackend.pojo.request.SignupRequest;
 import com.ecommercebackend.ecommercebackend.pojo.response.SignupResponse;
-import com.ecommercebackend.ecommercebackend.service.impl.SignInService;
+import com.ecommercebackend.ecommercebackend.service.impl.SignInOutService;
 import com.ecommercebackend.ecommercebackend.service.impl.SignupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -26,7 +27,7 @@ public class HomeController {
     @Autowired
     UsersRepository usersRepository ;
     @Autowired
-    SignInService signInService;
+    SignInOutService signInOutService;
 
     // welcome page
     @GetMapping("/")
@@ -57,20 +58,24 @@ public class HomeController {
         return signupService.signup(request, "seller");
     }
 
-    // 3. get all users
-    @GetMapping("/users")
-    public List<User> getAllUser() {
-        return (List<User>) usersRepository.findAll() ;
-    }
 
-    // 4. sign in
-    @PutMapping(
+    // 3. sign in
+    @PostMapping(
             value = "/sign-in",
             consumes= MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public String signIn(@RequestBody SignupRequest request) throws Exception{
-        return signInService.signIn(request.email, request.password);
+    public String signIn(@RequestBody SignInRequest request) throws Exception{
+        return signInOutService.signIn(request);
+    }
+    // 4. sign out
+    @PutMapping(
+            value = "/sign-out",
+            consumes= MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public String signOut(@RequestBody SignOutRequest request) throws Exception{
+        return signInOutService.signOut(request);
     }
 
 }

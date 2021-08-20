@@ -1,5 +1,5 @@
 package com.ecommercebackend.ecommercebackend.pojo.response;
 
-public class SignInResponse {
+public class SignInOutResponse {
     public Integer dbId;
 }

@@ -1,5 +1,5 @@
 package com.ecommercebackend.ecommercebackend.pojo.response;
 
-public class changeMoneyResponse extends CommonResponse {
+public class ChangeMoneyResponse extends CommonResponse {
     public Integer dbId;
 }

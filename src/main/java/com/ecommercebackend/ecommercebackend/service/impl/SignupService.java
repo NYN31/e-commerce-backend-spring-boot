@@ -16,8 +16,6 @@ import java.util.Base64;
 public class SignupService implements SignupInterface {
     @Autowired
     UsersRepository usersRepository;
-    @Autowired
-    AuthRepository authRepository;
 
     @Override
     public SignupResponse signup(SignupRequest request, String type) throws Exception {
@@ -33,21 +31,12 @@ public class SignupService implements SignupInterface {
             user.type = type ;
             usersRepository.save(user);
 
-            Auth authUser = new Auth();
-            authUser.isActive = false;
-            authUser.userId = user.id;
-            authUser.token = Base64.getEncoder().encodeToString(user.email.getBytes());
-            authRepository.save(authUser);
-
             SignupResponse response = new SignupResponse();
             response.statusCode = 200;
             response.message = "Signup successful";
             return response;
         } else {
-            SignupResponse response = new SignupResponse();
-            response.statusCode = 425;
-            response.message = "user already exist.";
-            return response;
+            throw new Exception("The email has already taken by someone");
         }
     }
 }

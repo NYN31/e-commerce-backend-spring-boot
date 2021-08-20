@@ -10,7 +10,7 @@ public class Product {
     @Column(name = "id")
     public Integer id ;
     @Column(name = "seller_id")
-    public Integer seller_id;
+    public Integer sellerId;
     @Column(name = "name")
     public String name;
     @Column(name = "tag")

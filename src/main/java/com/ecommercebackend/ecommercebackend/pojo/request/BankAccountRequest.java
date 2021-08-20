@@ -1,14 +1,14 @@
 package com.ecommercebackend.ecommercebackend.pojo.request;
 
 public class BankAccountRequest {
-    public String email;
+    public String token;
     public String bankName;
     public String bankBranch;
 }
 
 /*
 {
-    "email": "",
+    "token": "",
     "bankName": "",
     "bankBranch": ""
 }

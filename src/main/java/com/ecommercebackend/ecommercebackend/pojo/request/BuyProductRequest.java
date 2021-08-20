@@ -1,14 +1,14 @@
 package com.ecommercebackend.ecommercebackend.pojo.request;
 
 public class BuyProductRequest {
-    public Integer buyerId;
+    public String token;
     public Integer productId;
     public Integer quantity;
 }
 
 /*
 {
-    "buyerId": ,
+    "token": "",
     "productId": ,
     "quantity":
 }
