@@ -86,5 +86,4 @@ public class BuyerFeatureController {
     public ChangeMoneyResponse addMoneyToAccount(@RequestBody ChangeMoneyRequest request) throws Exception{
         return buyerFeatureService.addMoney(request);
     }
-
 }

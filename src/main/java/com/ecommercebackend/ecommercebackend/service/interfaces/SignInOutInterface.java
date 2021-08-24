@@ -6,5 +6,5 @@ import com.ecommercebackend.ecommercebackend.pojo.request.SignOutRequest;
 
 public interface SignInOutInterface {
     String signIn(SignInRequest request) throws Exception;
-    String signOut(SignOutRequest request) throws Exception;
+    String signOut() throws Exception;
 }

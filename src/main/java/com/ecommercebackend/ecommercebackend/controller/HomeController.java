@@ -1,7 +1,6 @@
 package com.ecommercebackend.ecommercebackend.controller;
 
 
-import com.ecommercebackend.ecommercebackend.db.entity.*;
 import com.ecommercebackend.ecommercebackend.db.repo.*;
 import com.ecommercebackend.ecommercebackend.pojo.request.SignInRequest;
 import com.ecommercebackend.ecommercebackend.pojo.request.SignOutRequest;
@@ -13,9 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Enumeration;
+import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class HomeController {
     /*
         1. Add buyers
@@ -28,6 +31,14 @@ public class HomeController {
     UsersRepository usersRepository ;
     @Autowired
     SignInOutService signInOutService;
+    @Autowired
+    HttpServletRequest request;
+
+    private HttpServletResponse response;
+    @Autowired
+    public HomeController(HttpServletRequest request) {
+        this.request = request;
+    }
 
     // welcome page
     @GetMapping("/")
@@ -74,8 +85,10 @@ public class HomeController {
             consumes= MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public String signOut(@RequestBody SignOutRequest request) throws Exception{
-        return signInOutService.signOut(request);
-    }
+    public String signOut(@RequestHeader(value="token") String token) throws Exception{
+        //System.out.println(request.getHeader("token"));
+        //System.out.println(token);
 
+        return signInOutService.signOut();
+    }
 }

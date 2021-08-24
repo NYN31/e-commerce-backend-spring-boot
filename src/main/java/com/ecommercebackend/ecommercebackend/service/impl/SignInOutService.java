@@ -52,8 +52,9 @@ public class SignInOutService implements SignInOutInterface {
         authRepository.save(authen);
         return authen.token;
     }
-    public String signOut(SignOutRequest request) throws Exception {
-        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(request.token));
+    public String signOut() throws Exception {
+        String token = "lsdf";
+        Optional<Auth> auth = Optional.ofNullable(authRepository.findByToken(token));
         if(!auth.isPresent() || !auth.get().isActive) {
             throw new Exception("Please log in first");
         }
